@@ -1,21 +1,24 @@
-#include <WiFi.h>
+#include <electricity_map_api.hpp>
 #include <Secrets.h>
+
+#include <WiFi.h>
 
 void connect_to_wifi() {
   // We start by connecting to a WiFi network
   // To debug, please enable Core Debug Level to Verbose
   Serial.println();
-  Serial.print("[WiFi] Connecting to ");
-  Serial.println(ssid);
+  // Todo: Remove printing of password
+  Serial.printf("[WiFi] Connecting to %s : %s \n", ssid, password);
+
 
   WiFi.begin(ssid, password);
   // Auto reconnect is set true as default
   // To set auto connect off, use the following function
   //    WiFi.setAutoReconnect(false);
 
-  // Will try for about 10 seconds (20x 500ms)
-  int tryDelay = 500;
-  int numberOfTries = 20;
+  // Will try for about 30 seconds (30x 1000ms)
+  int tryDelay = 1000;
+  int numberOfTries = 30;
 
   // Wait for the WiFi event
   while (true) {
@@ -43,7 +46,7 @@ void connect_to_wifi() {
     delay(tryDelay);
 
     if (numberOfTries <= 0) {
-      Serial.print("[WiFi] Failed to connect to WiFi!");
+      Serial.println("[WiFi] Failed to connect to WiFi!");
       // Use disconnect function to force stop trying to connect
       WiFi.disconnect();
       return;
@@ -52,6 +55,7 @@ void connect_to_wifi() {
     }
   }
 };
+
 
 void setup() {
   delay(500);
@@ -78,13 +82,14 @@ void loop() {
     }
     Serial.print("\n");
 
-    Serial.println("TODO: Check for updates from Carbon Feed"); //-----------------
-    
+    Serial.println("Checking for updates from Carbon Feed"); //-----------------
+    int ci = get_latest_carbon_intensity("GB", elec_map_api_key);
+    Serial.printf("Current Carbon Intensity: %d\n", ci);
 
 
     Serial.println("TODO: Update Display");
     Serial.println("TODO: Update Low Carbon Trigger Output");
     Serial.println("...\n...");
-    delay(5000);
+    delay(30*1000);
   };
 }
