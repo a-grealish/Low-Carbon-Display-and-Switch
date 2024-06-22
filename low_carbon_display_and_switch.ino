@@ -3,6 +3,12 @@
 
 #include <WiFi.h>
 
+#define RGB_BRIGHTNESS 64 // Change white brightness (max 255)
+
+typedef struct {
+  uint8_t r, g, b;
+} tColor;
+
 void connect_to_wifi() {
   // We start by connecting to a WiFi network
   // To debug, please enable Core Debug Level to Verbose
@@ -56,8 +62,38 @@ void connect_to_wifi() {
   }
 };
 
+tColor carbon_intensity_to_color(int ci){
+  // Colors to match the electricityMaps app
+  // Taken from: https://github.com/electricitymaps/electricitymaps-contrib/blob/d51fc19913a0445533d831a31473b95c31e9c000/web/src/hooks/colors.ts#L3
+  // const defaultCo2Scale = {
+  //   steps: [0, 150, 600, 800, 1100, 1500],
+  //   colors: ['#2AA364', '#F5EB4D', '#9E4229', '#381D02', '#381D02', '#000'],
+  // };
+
+  if(ci<=150){
+    // #2AA364
+    return {0x2a, 0xa3, 0x64};
+  } else if(ci<=600){
+    // #F5EB4D
+    return {0xF5, 0xEB, 0x4D};
+  } else if (ci<=600){
+    // #9E4229
+    return {0x9E, 0x42, 0x29};
+  } else if (ci<=1500){
+    // Merging the last two steps as it's the same color
+    // #381D02
+    return {0x38, 0x1D, 0x02};
+  } else {
+    // Return blue as the error code
+    return {0, 0, 255};
+  }
+
+}
 
 void setup() {
+  // Initiate the LED to a Blue colour
+  neopixelWrite(RGB_BUILTIN, 0, 0, RGB_BRIGHTNESS);
+
   delay(500);
   Serial.begin(115200);
   Serial.println("Hello World!! I'm going to help lower your carbon footprint 🍃");
@@ -88,8 +124,14 @@ void loop() {
 
 
     Serial.println("TODO: Update Display");
+    tColor c = carbon_intensity_to_color(ci);
+    neopixelWrite(RGB_BUILTIN, c.r, c.g, c.b);
+
+
     Serial.println("TODO: Update Low Carbon Trigger Output");
     Serial.println("...\n...");
-    delay(30*1000);
+
+    Serial.println("Sleeping for 1 hour");
+    delay(60*60*1000);
   };
 }
