@@ -3,6 +3,8 @@
 #include <NetworkClientSecure.h>
 
 
+const char* host = "api.electricitymap.org";
+uint16_t port = 443;
 // Expiry: Sun, 22 Jun 2036 00:00:00 GMT
 const char* root_cert = "-----BEGIN CERTIFICATE-----\n"
 "MIICCTCCAY6gAwIBAgINAgPlwGjvYxqccpBQUjAKBggqhkjOPQQDAzBHMQswCQYD\n"
@@ -20,7 +22,7 @@ const char* root_cert = "-----BEGIN CERTIFICATE-----\n"
 
 
 
-int get_latest_carbon_intensity(char* region, char* api_key){
+int get_latest_carbon_intensity(char* zone, char* api_key){
   Serial.println("Getting latest Carbon Intensities");
 
   signed int ci = -1;
@@ -35,8 +37,13 @@ int get_latest_carbon_intensity(char* region, char* api_key){
   // Forcing http 1.0 fixes this
   https.useHTTP10(true);
 
-  // TODO: Include the region filter
-  if (https.begin(client, "https://api.electricitymap.org/v3/carbon-intensity/latest" )) {
+  // Include the zone filter
+  // 36 = Plain URL, 6 is for the zone key, 1 for null terminator
+  char uri[36 + 6 + 1];
+  sprintf(uri, "/v3/carbon-intensity/latest?zoneKey=%s",  zone);
+  Serial.printf("Calling %s:%i%s \n", host, port, uri);
+
+  if (https.begin(client, host, port, uri, true)) {
     Serial.println("[HTTPS] GET..");
 
     int httpCode = https.GET();
@@ -67,13 +74,10 @@ int get_latest_carbon_intensity(char* region, char* api_key){
 
       // Read values
       Serial.println("Read Values");
-
-      if (doc.containsKey("carbonIntensity")){
-        ci = doc["carbonIntensity"].as<signed int>();
-        Serial.printf("Carbon Intensity: %d\n", ci);
-      } else {
-        Serial.println("[HTTPS] Error, could not find carbonIntensity key in response");
-      }
+      ci = doc["carbonIntensity"].as<signed int>();
+      Serial.printf("[Resp] Carbon Intensity: %d\n", ci);
+      const char* zone_res = doc["zone"];
+      Serial.printf("[Resp] Zone: %s\n", zone_res);
 
     } else {
       Serial.printf("[HTTPS] GET... failed, error: %s\n", https.errorToString(httpCode).c_str());
